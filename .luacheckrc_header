@@ -1,5 +1,5 @@
-max_line_length = 200
-max_cyclomatic_complexity = 90
+max_line_length = 150
+max_cyclomatic_complexity = 36
 codes = true
 cache = true
 
@@ -210,8 +210,10 @@ stds.fg = {
         getDicePackInfo = {read_only = true},
         getDicePacks = {read_only = true},
         getDiceRelativeScale = {read_only = true},
+		getDiceRollScale = {read_only = true},
         getDiceSkinInfo = {read_only = true},
         getDiceSkins = {read_only = true},
+		getDiceTrayScale = {read_only = true},
         getDistanceBaseUnits = {read_only = true},
         getDistanceDiagMult = {read_only = true},
         getDistanceSuffix = {read_only = true},
@@ -252,6 +254,8 @@ stds.fg = {
         requestNewClientWindow = {read_only = true},
         setDiceCustom = {read_only = true},
         setDiceRelativeScale = {read_only = true},
+		setDiceRollScale = {read_only = true},
+		setDiceTrayScale = {read_only = true},
         setDistanceBaseUnits = {read_only = true},
         setDistanceDiagMult = {read_only = true},
         setDistanceSuffix = {read_only = true},
@@ -431,6 +435,7 @@ stds.fgfunctions = {
     "getName",
     "getSelectionPosition",
     "getSize",
+	"getStringValue"
     "getValue",
     "getWindowAt",
     "getWindowCount",
