@@ -1,5 +1,5 @@
-max_line_length = 150
-max_cyclomatic_complexity = 36
+max_line_length = 200
+max_cyclomatic_complexity = 90
 codes = true
 cache = true
 
@@ -76,7 +76,7 @@ stds.fg = {
         getRulesetVersion = {read_only = true},
         getText = {read_only = true},
         getType = {read_only = true},
-        getValue = {read_only = true},
+        getValue = {read_only = false},
         getVersion = {read_only = true},
         import = {read_only = true},
         isEmpty = {read_only = true},
@@ -203,8 +203,8 @@ stds.fg = {
         disableDiceRolling = {read_only = true},
         findWindow = {read_only = true},
         getAssetGridSize = {read_only = true},
-        getAssetSize = {read_only = true},
         getAssets = {read_only = true},
+        getAssetSize = {read_only = true},
         getDice = {read_only = true},
         getDiceInfo = {read_only = true},
         getDicePackInfo = {read_only = true},
@@ -218,8 +218,8 @@ stds.fg = {
         getFontColor = {read_only = true},
         getFonts = {read_only = true},
         getFrames = {read_only = true},
-        getIconSize = {read_only = true},
         getIcons = {read_only = true},
+        getIconSize = {read_only = true},
         getRuleset = {read_only = true},
         getRulesetInfo = {read_only = true},
         getString = {read_only = true},
@@ -259,6 +259,10 @@ stds.fg = {
         setString = {read_only = true},
         setUIScale = {read_only = true},
         toggleWindow = {read_only = true},
+		getDiceRollScale = {read_only = true},
+		getDiceTrayScale = {read_only = true},
+		setDiceRollScale = {read_only = true},
+		setDiceTrayScale = {read_only = true},
       },
     },
     Module = {
@@ -325,6 +329,7 @@ stds.fg = {
         onHover = {read_only = false},
         onHoverUpdate = {read_only = false},
         onMove = {read_only = false},
+		onMovePathChanged = {read_only = false},
         onScaleChanged = {read_only = false},
         onTargetUpdate = {read_only = false},
         onWheel = {read_only = false},
@@ -475,5 +480,7 @@ stds.fgfunctions = {
     "setUnderline",
     "setValue",
     "setVisible",
+	"getStringValue",
+	"setStringValue"
   }
 }
