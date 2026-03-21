@@ -8,7 +8,7 @@ on:
       - '.luacheckrc_header'
       - '.github/workflows/main.yml'
   schedule:
-    - cron:  '30 5,17 * * *'
+    - cron: '30 5,17 * * *'
   workflow_dispatch:
 
 permissions:
@@ -22,396 +22,84 @@ jobs:
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       with:
-        fetch-depth: 0
+        fetch-depth: 5
+  
+    - name: Sync Rulesets
+      run: |
+        RULESETS=(
+          "FG-Unofficial-Developers-Guild/CoreRPG|CoreRPG"
+          "FG-Unofficial-Developers-Guild/2E|DND2E"
+          "FG-Unofficial-Developers-Guild/3.5E|DND35E"
+          "FG-Unofficial-Developers-Guild/4e|DND4E"
+          "FG-Unofficial-Developers-Guild/5e|DND5E"
+          "FG-Unofficial-Developers-Guild/PFRPG|PFRPG"
+          "FG-Unofficial-Developers-Guild/PFRPG2|PFRPG2"
+          "FG-Unofficial-Developers-Guild/SFRPG|SFRPG"
+        )
 
-    # Rulesets
-    - name: Clone FG-Unofficial-Developers-Guild/CoreRPG
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/CoreRPG
-        path: .fg/rulesets/CoreRPG
-        fetch-depth: 0
-        token: ${{ github.token }}
+        for item in "${RULESETS[@]}"; do
+          IFS="|" read -r repo folder <<< "$item"
+          git clone --depth 1 "https://x-access-token:${{ github.token }}@github.com/$repo.git" ".fg/rulesets/$folder" &
+        done
 
-    - name: Clone FG-Unofficial-Developers-Guild/2E
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/2E
-        path: .fg/rulesets/DND2E
-        fetch-depth: 0
-        token: ${{ github.token }}
+        wait
 
-    - name: Clone FG-Unofficial-Developers-Guild/3.5E
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/3.5E
-        path: .fg/rulesets/DND35E
-        fetch-depth: 0
-        token: ${{ github.token }}
+    - env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        # Add external repos
+        EXT_LIST=(
+          "Kelrugem/Extended-automation-and-overlays"
+          "rhagelstrom/BetterCombatEffects"
+          "MeAndUnique/SizeMatters"
+          "MeAndUnique/TemporalFixation"
+          "SirMotte/FGU-Theme-Hearth"
+          "rhagelstrom/Turbo"
+          "rhagelstrom/Contaminated"
+          "rhagelstrom/FranklyNot"
+          "rhagelstrom/PowerUp"
+          "rhagelstrom/Exhausted"
+          "rhagelstrom/ChatAestheticsConfigurator"
+          "rhagelstrom/ArcaneWard"
+          "rhagelstrom/EffectiveInitiative"
+          "rhagelstrom/HighVariance"
+          "rhagelstrom/Effective-NPC"
+          "rhagelstrom/LifeLedger"
+          "rhagelstrom/Pets"
+        )
 
-    - name: Clone FG-Unofficial-Developers-Guild/4e
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/4e
-        path: .fg/rulesets/DND4E
-        fetch-depth: 0
-        token: ${{ github.token }}
+        # Add Guild repos starting with `FG-`
+        GUILD_REPOS=$(gh repo list FG-Unofficial-Developers-Guild --limit 200 --json fullName --jq '.[].fullName' | grep '/FG-')
 
-    - name: Clone FG-Unofficial-Developers-Guild/5e
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/5e
-        path: .fg/rulesets/DND5E
-        fetch-depth: 0
-        token: ${{ github.token }}
+        # Merge and clone
+        declare -A CLONE_MAP
+        for repo in "${EXT_LIST[@]}"; do
+          folder="${repo##*/}"
+          CLONE_MAP["$folder"]="$repo"
+        done
+        for repo in $GUILD_REPOS; do
+          folder="${repo##*/}"
+          if [[ -z "${CLONE_MAP[$folder]}" ]]; then
+             CLONE_MAP["$folder"]="$repo"
+          fi
+        done
 
-    - name: Clone FG-Unofficial-Developers-Guild/PFRPG
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/PFRPG
-        path: .fg/rulesets/PFRPG
-        fetch-depth: 0
-        token: ${{ github.token }}
+        # Parallel Clone
+        for folder in "${!CLONE_MAP[@]}"; do
+          repo="${CLONE_MAP[$folder]}"
+          echo "Cloning $repo -> .fg/extensions/$folder"
+          gh repo clone "$repo" ".fg/extensions/$folder" -- --depth 1 &
+        done
 
-    - name: Clone FG-Unofficial-Developers-Guild/PFRPG2
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/PFRPG2
-        path: .fg/rulesets/PFRPG2
-        fetch-depth: 0
-        token: ${{ github.token }}
+        wait
 
-    - name: Clone FG-Unofficial-Developers-Guild/SFRPG
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/SFRPG
-        path: .fg/rulesets/SFRPG
-        fetch-depth: 0
-        token: ${{ github.token }}
-
-    # bmos extensions
-    - name: Clone FG-Unofficial-Developers-Guild/FG-PFRPG-Encumbrance-Penalties
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-PFRPG-Encumbrance-Penalties
-        path: .fg/extensions/FG-PFRPG-Encumbrance-Penalties
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-PFRPG-Advanced-Crit-and-Fumble-Tables
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-PFRPG-Advanced-Crit-and-Fumble-Tables
-        path: .fg/extensions/FG-PFRPG-Advanced-Crit-and-Fumble-Tables
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-PFRPG-Advanced-Effects
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-PFRPG-Advanced-Effects
-        path: .fg/extensions/FG-PFRPG-Advanced-Effects
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-PFRPG-Drain-and-Permanent-Bonuses
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-PFRPG-Drain-and-Permanent-Bonuses
-        path: .fg/extensions/FG-PFRPG-Drain-and-Permanent-Bonuses
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-FG-CoreRPG-Extraplanar-Containers
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-CoreRPG-Extraplanar-Containers
-        path: .fg/extensions/FG-CoreRPG-Extraplanar-Containers
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-CoreRPG-Coins-Weight
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-CoreRPG-Coins-Weight
-        path: .fg/extensions/FG-CoreRPG-Coins-Weight
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-Ammunition-Manager
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-Ammunition-Manager
-        path: .fg/extensions/FG-Ammunition-Manager
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-PFRPG-Upgrade-NPC-Actions
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-PFRPG-Upgrade-NPC-Actions
-        path: .fg/extensions/FG-PFRPG-Upgrade-NPC-Actions
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-PFRPG-Spell-Formatting
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-PFRPG-Spell-Formatting
-        path: .fg/extensions/FG-PFRPG-Spell-Formatting
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-PFRPG-Spell-Failure
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-PFRPG-Spell-Failure
-        path: .fg/extensions/FG-PFRPG-Spell-Failure
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-PFRPG-Sanity-Tracker
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-PFRPG-Sanity-Tracker
-        path: .fg/extensions/FG-PFRPG-Sanity-Tracker
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-PFRPG-Malady-Tracker
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-PFRPG-Malady-Tracker
-        path: .fg/extensions/FG-PFRPG-Malady-Tracker
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-HitMargins
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-HitMargins
-        path: .fg/extensions/FG-HitMargins
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-PFRPG-Live-Hitpoints
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-PFRPG-Live-Hitpoints
-        path: .fg/extensions/FG-PFRPG-Live-Hitpoints
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-PFRPG-Item-Durability
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-PFRPG-Item-Durability
-        path: .fg/extensions/FG-PFRPG-Item-Durability
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-PFRPG-Extra-Stat-to-Saves
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-PFRPG-Extra-Stat-to-Saves
-        path: .fg/extensions/FG-PFRPG-Extra-Stat-to-Saves
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-PFRPG-ExtendedACBonusTypes
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-PFRPG-ExtendedACBonusTypes
-        path: .fg/extensions/FG-PFRPG-ExtendedACBonusTypes
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-PFRPG-Enhanced-Items
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-PFRPG-Enhanced-Items
-        path: .fg/extensions/FG-PFRPG-Enhanced-Items
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-PFRPG-Customized-Item-Generator
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-PFRPG-Customized-Item-Generator
-        path: .fg/extensions/FG-PFRPG-Customized-Item-Generator
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-PFRPG-Advanced-Item-Actions
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-PFRPG-Advanced-Item-Actions
-        path: .fg/extensions/FG-PFRPG-Advanced-Item-Actions
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-CoreRPG-Party-Inventory-Weight
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-CoreRPG-Party-Inventory-Weight
-        path: .fg/extensions/FG-CoreRPG-Party-Inventory-Weight
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-CoreRPG-Party-Inventory-Identified
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-CoreRPG-Party-Inventory-Identified
-        path: .fg/extensions/FG-CoreRPG-Party-Inventory-Identified
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-CoreRPG-Moon-Tracker
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-CoreRPG-Moon-Tracker
-        path: .fg/extensions/FG-CoreRPG-Moon-Tracker
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-Aura-Effect
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-Aura-Effect
-        path: .fg/extensions/FG-Aura-Effect
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-4E-TEMPO-and-TEMPA
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-4E-TEMPO-and-TEMPA
-        path: .fg/extensions/FG-4E-TEMPO-and-TEMPA
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-24-Hour-Clock
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-24-Hour-Clock
-        path: .fg/extensions/FG-24-Hour-Clock
-        fetch-depth: 0
-        token: ${{ github.token }}
-
-    # Other dev's extensions
-    - name: Clone Kelrugem/Extended-automation-and-overlays
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: Kelrugem/Extended-automation-and-overlays
-        path: .fg/extensions/Extended-automation-and-overlays
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone FG-Unofficial-Developers-Guild/FG-ClockAdjuster
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: FG-Unofficial-Developers-Guild/FG-ClockAdjuster
-        path: .fg/extensions/FG-ClockAdjuster
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone rhagelstrom/BetterCombatEffects
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: rhagelstrom/BetterCombatEffects
-        path: .fg/extensions/BetterCombatEffects
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone MeAndUnique/SizeMatters
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: MeAndUnique/SizeMatters
-        path: .fg/extensions/SizeMatters
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone MeAndUnique/TemporalFixation
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: MeAndUnique/TemporalFixation
-        path: .fg/extensions/TemporalFixation
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone SirMotte/FGU-Theme-Hearth
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: SirMotte/FGU-Theme-Hearth
-        path: .fg/extensions/FGU-Theme-Hearth
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone rhagelstrom/Turbo
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: rhagelstrom/Turbo
-        path: .fg/extensions/Turbo
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone rhagelstrom/Contaminated
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: rhagelstrom/Contaminated
-        path: .fg/extensions/Contaminated
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone rhagelstrom/FranklyNot
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: rhagelstrom/FranklyNot
-        path: .fg/extensions/FranklyNot
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone rhagelstrom/PowerUp
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: rhagelstrom/PowerUp
-        path: .fg/extensions/PowerUp
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone rhagelstrom/Exhausted
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: rhagelstrom/Exhausted
-        path: .fg/extensions/Exhausted
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone rhagelstrom/ChatAestheticsConfigurator
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: rhagelstrom/ChatAestheticsConfigurator
-        path: .fg/extensions/ChatAestheticsConfigurator
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone rhagelstrom/ArcaneWard
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: rhagelstrom/ArcaneWard
-        path: .fg/extensions/ArcaneWard
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone rhagelstrom/EffectiveInitiative
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: rhagelstrom/EffectiveInitiative
-        path: .fg/extensions/EffectiveInitiative
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone rhagelstrom/HighVariance
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: rhagelstrom/HighVariance
-        path: .fg/extensions/HighVariance
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone rhagelstrom/Effective-NPC
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: rhagelstrom/Effective-NPC
-        path: .fg/extensions/Effective-NPC
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone rhagelstrom/LifeLedger
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: rhagelstrom/LifeLedger
-        path: .fg/extensions/LifeLedger
-        fetch-depth: 0
-        token: ${{ github.token }}
-    - name: Clone rhagelstrom/Pets
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      with:
-        repository: rhagelstrom/Pets
-        path: .fg/extensions/Pets
-        fetch-depth: 0
-        token: ${{ github.token }}
-
-    # Processing
-    - name: Generate new .luacheckrc
-      uses: FG-Unofficial-Developers-Guild/action-generate-luacheckrc@main
+    - uses: FG-Unofficial-Developers-Guild/action-generate-luacheckrc@main
       with:
         std: '+dnd2e+dnd35e+dnd4e+dnd5e+pfrpg+pfrpg2+sfrpg'
 
-    - name: Create pull request
-      uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0
+    - uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0
       with:
         title: Update .luacheckrc
-        commit-message: "The latest .luacheckrc config build from targeted repos."
+        commit-message: "The latest .luacheckrc config built from targeted repos."
         branch: update-luacheckrc
         delete-branch: true
-        token: ${{ github.token }}
