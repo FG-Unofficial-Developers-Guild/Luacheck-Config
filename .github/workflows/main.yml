@@ -69,7 +69,7 @@ jobs:
         )
 
         # Add Guild repos starting with `FG-`
-        GUILD_REPOS=$(gh repo list FG-Unofficial-Developers-Guild --limit 200 --json fullName --jq '.[].fullName' | grep '/FG-')
+        GUILD_REPOS=$(gh repo list FG-Unofficial-Developers-Guild --limit 200 --json nameWithOwner --jq '.[].nameWithOwner' | grep '/FG-')
 
         # Merge and clone
         declare -A CLONE_MAP
