@@ -30,6 +30,8 @@ jobs:
         token: ${{ secrets.BMOS_SYNC_TOKEN }}
   
     - name: Sync Rulesets
+      env:
+        GH_TOKEN: ${{ secrets.BMOS_SYNC_TOKEN }}
       run: |
         RULESETS=(
           "FG-Unofficial-Developers-Guild/CoreRPG|CoreRPG"
@@ -44,7 +46,7 @@ jobs:
 
         for item in "${RULESETS[@]}"; do
           IFS="|" read -r repo folder <<< "$item"
-          git clone --depth 1 "https://x-access-token:${{ secrets.BMOS_SYNC_TOKEN }}@github.com/$repo.git" ".fg/rulesets/$folder" &
+          gh repo clone "$repo" ".fg/rulesets/$folder" -- --depth 1 &
         done
 
         wait
