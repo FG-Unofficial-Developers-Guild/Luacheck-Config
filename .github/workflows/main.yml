@@ -11,18 +11,23 @@ on:
     - cron: '30 5,17 * * *'
   workflow_dispatch:
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: read-all
 
 jobs:
   generate:
-    runs-on: ubuntu-latest
     name: generate new .luacheckrc
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write
+
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       with:
         fetch-depth: 5
+        token: ${{ secrets.BMOS_SYNC_TOKEN }}
   
     - name: Sync Rulesets
       run: |
@@ -39,13 +44,13 @@ jobs:
 
         for item in "${RULESETS[@]}"; do
           IFS="|" read -r repo folder <<< "$item"
-          git clone --depth 1 "https://x-access-token:${{ github.token }}@github.com/$repo.git" ".fg/rulesets/$folder" &
+          git clone --depth 1 "https://x-access-token:${{ secrets.BMOS_SYNC_TOKEN }}@github.com/$repo.git" ".fg/rulesets/$folder" &
         done
 
         wait
 
     - env:
-        GH_TOKEN: ${{ github.token }}
+        GH_TOKEN: ${{ secrets.BMOS_SYNC_TOKEN }}
       run: |
         # Add external repos
         EXT_LIST=(
@@ -99,7 +104,8 @@ jobs:
 
     - uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0
       with:
+        token: ${{ secrets.BMOS_SYNC_TOKEN }}
+        branch: update-luacheckrc
         title: Update .luacheckrc
         commit-message: "The latest .luacheckrc config built from targeted repos."
-        branch: update-luacheckrc
         delete-branch: true
