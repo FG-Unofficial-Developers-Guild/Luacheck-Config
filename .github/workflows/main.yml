@@ -75,8 +75,12 @@ jobs:
           "rhagelstrom/Pets"
         )
 
-        # Add Guild repos starting with `FG-`
-        GUILD_REPOS=$(gh repo list FG-Unofficial-Developers-Guild --limit 200 --json nameWithOwner --jq '.[].nameWithOwner' | grep '/FG-')
+        # Add Guild repos starting with `FG-`, excluding archived ones
+        JQ_FILTER='.[] | select(.isArchived == false and (.name | startswith("FG-"))).nameWithOwner'
+        GUILD_REPOS=$(gh repo list FG-Unofficial-Developers-Guild \
+          --limit 200 \
+          --json nameWithOwner,name,isArchived \
+          --jq "$JQ_FILTER")
 
         # Merge and clone
         declare -A CLONE_MAP
